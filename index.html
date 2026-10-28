@@ -691,6 +691,16 @@
   </div>
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = https://ddijkjcjeznpoxzrnqok.supabase.co/rest/v1/;
+    const SUPABASE_PUBLISHABLE_KEY = sb_publishable_0FQs-lXzpXTbjpNWLb4iyg_LoEVYIPS;
+
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+</script>
   <script>
     // Initial Realistic Indian Civic Data with simulated map coordinates (x, y % on map canvas)
     const INITIAL_ISSUES = [
