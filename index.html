@@ -971,12 +971,22 @@
         reportView.classList.add('hidden');
         feedBtn.className = "flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-slate-100 text-[var(--foreground)]";
         render();
-      } else {
-        feedView.classList.add('hidden');
-        reportView.classList.remove('hidden');
-        feedBtn.className = "flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-[var(--muted-foreground)] hover:bg-slate-50";
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+  feedView.classList.add('hidden');
+  reportView.classList.remove('hidden');
+
+  feedBtn.className = "flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-[var(--muted-foreground)] hover:bg-slate-50";
+
+  // Initialize the report map when the report page opens
+  if (window.google && window.google.maps) {
+    if (!reportMap) {
+      initReportMap();
+    } else {
+      google.maps.event.trigger(reportMap, 'resize');
+    }
+  }
+}
+      dow.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // Display Mode: Grid vs City Map View
