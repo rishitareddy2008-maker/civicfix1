@@ -643,34 +643,12 @@
             </div>
           </div>
 
-          <!-- Interactive Click-to-Pin Visual Map Grid -->
-          <div class="space-y-1.5 pt-2">
-            <span class="block text-xs font-bold text-slate-700">GPS Coordinates (Click on map to drop pin):</span>
-            <div
-              id="interactive-map"
-              onclick="handleMapClick(event)"
-              class="relative h-44 w-full rounded-xl overflow-hidden border border-slate-300 bg-slate-100 cursor-crosshair select-none"
-              style="background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px), linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px); background-size: 24px 24px, 48px 48px, 48px 48px;"
-            >
-              <div class="absolute inset-x-0 top-1/2 h-3 bg-amber-200/50 -translate-y-1/2 pointer-events-none"></div>
-              <div class="absolute inset-y-0 left-1/3 w-3 bg-amber-200/50 pointer-events-none"></div>
-
-              <!-- Animated Map Pin Marker -->
-              <div id="map-pin" class="absolute transition-all duration-150 flex flex-col items-center pointer-events-none -translate-x-1/2 -translate-y-full" style="left: 48%; top: 52%;">
-                <div class="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-orange-500/30">
-                  <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                  </svg>
-                </div>
-                <div class="w-2.5 h-1 bg-black/40 rounded-full blur-[1px]"></div>
-              </div>
-
-              <div class="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-xs text-white px-2.5 py-1 rounded-lg text-[12px] font-mono flex items-center gap-1.5 pointer-events-none">
-                <span id="coord-display">Lat: 28.613900, Lng: 77.209000</span>
-              </div>
-            </div>
-          </div>
-        </div>
+         <!-- Google Map: click to drop pin -->
+<div class="space-y-1.5 pt-2">
+  <span class="block text-xs font-bold text-slate-700">Click on the map to drop a pin on the issue location:</span>
+  <div id="report-map" class="h-64 w-full rounded-xl border border-slate-300 overflow-hidden"></div>
+  <p id="pin-status" class="text-[12px] text-slate-500">No pin placed yet. Click the map or use Auto-Detect GPS.</p>
+</div>
 
         <!-- Submit Button -->
         <button
@@ -1456,36 +1434,46 @@ function renderMapPins() {
       render();
     }
 
-    function handleMapClick(e) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const pctX = (x / rect.width) * 100;
-      const pctY = (y / rect.height) * 100;
+  let reportMap = null;
+let reportMarker = null;
 
-      const pin = document.getElementById('map-pin');
-      pin.style.left = `${pctX}%`;
-      pin.style.top = `${pctY}%`;
+function initReportMap() {
+  reportMap = new google.maps.Map(document.getElementById('report-map'), {
+    center: { lat: 20.5937, lng: 78.9629 },
+    zoom: 5
+  });
+  reportMap.addListener('click', (e) => placeReportPin(e.latLng.lat(), e.latLng.lng()));
+}
 
-      selectedLat = Number((28.5000 + (1 - pctY / 100) * 0.25).toFixed(6));
-      selectedLng = Number((77.1000 + (pctX / 100) * 0.25).toFixed(6));
-      document.getElementById('coord-display').textContent = `Lat: ${selectedLat}, Lng: ${selectedLng} (Pin Placed)`;
+function placeReportPin(lat, lng) {
+  selectedLat = Number(lat.toFixed(6));
+  selectedLng = Number(lng.toFixed(6));
+  if (reportMarker) reportMarker.setMap(null);
+  reportMarker = new google.maps.Marker({
+    position: { lat: selectedLat, lng: selectedLng },
+    map: reportMap
+  });
+  document.getElementById('pin-status').textContent = 'Pin placed on the map ✓';
+}
+
+function autoDetectLocation() {
+  if (!navigator.geolocation) {
+    showToast("GPS Error", "Geolocation is not supported by your browser.", "error");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    if (reportMap) {
+      reportMap.setCenter({ lat, lng });
+      reportMap.setZoom(17);
     }
-
-    function autoDetectLocation() {
-      if (!navigator.geolocation) {
-        showToast("GPS Error", "Geolocation is not supported by your browser.", "error");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(pos => {
-        selectedLat = Number(pos.coords.latitude.toFixed(6));
-        selectedLng = Number(pos.coords.longitude.toFixed(6));
-        document.getElementById('coord-display').textContent = `Lat: ${selectedLat}, Lng: ${selectedLng} (GPS Auto-Detected)`;
-        showToast("GPS Locked", `Coordinates captured: ${selectedLat}, ${selectedLng}`, "success");
-      }, err => {
-        showToast("GPS Permission Denied", "Click on the interactive map directly to drop pin.", "error");
-      });
-    }
+    placeReportPin(lat, lng);
+    showToast("GPS Locked", "Your current location was pinned on the map.", "success");
+  }, () => {
+    showToast("GPS Permission Denied", "Click on the map directly to drop a pin.", "error");
+  });
+}
 
     // Photo Preview with File Details
     function handlePhotoUpload(e) {
@@ -1529,6 +1517,10 @@ function renderMapPins() {
       const city = document.getElementById('addr-city').value;
       const pincode = document.getElementById('addr-pincode').value.trim();
 
+            if (!reportMarker) {
+        showToast("Pin Required", "Please click the map to mark the issue location.", "error");
+        return;
+      }
       if (!title || !street || !landmark || !locality || !ward || !pincode) {
         showToast("Missing Required Fields", "Please complete all mandatory address details.", "error");
         return;
