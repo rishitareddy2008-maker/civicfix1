@@ -1616,16 +1616,15 @@
       }
       if (/water supply|water pipeline|leak|burst pipe|pipe/.test(text)) return CIVIC_IMAGE_ASSETS.water;
       if (/traffic signal|traffic light|signal/.test(text)) return CIVIC_IMAGE_ASSETS.traffic;
+      if (/encroach|blocking (?:the )?footpath|stall on (?:the )?sidewalk|sidewalk obstruction/.test(text) || category.includes('encroach')) {
+        return CIVIC_IMAGE_ASSETS.encroachment;
+      }
       if (/footpath|sidewalk|pavement/.test(text)) return CIVIC_IMAGE_ASSETS.infrastructure;
       if (/pothole|road damage|road edge|uneven road|broken road|road surface/.test(text)) {
         if (/service road/.test(text)) return CIVIC_IMAGE_ASSETS.potholeServiceRoad;
         if (/uneven/.test(text)) return CIVIC_IMAGE_ASSETS.potholeUnevenRoad;
         if (/road edge/.test(text)) return CIVIC_IMAGE_ASSETS.potholeDilova;
-        if (/bus stop/.test(text) && /encroachment/.test(category)) return CIVIC_IMAGE_ASSETS.potholeBengaluru;
         return CIVIC_IMAGE_ASSETS.pothole;
-      }
-      if (/encroach|blocking (?:the )?footpath|stall on (?:the )?sidewalk|sidewalk obstruction/.test(text) || category.includes('encroach')) {
-        return CIVIC_IMAGE_ASSETS.encroachment;
       }
       return fallback;
     }
@@ -1656,6 +1655,33 @@
         /^assets\/civic-issues\/[a-z0-9-]+\.jpg$/i.test(photo);
       if (!isSupportedPhoto) return { ...fallback, fallback: fallback.src };
       return { ...fallback, src: photo, fallback: fallback.src, credit: '', source: '' };
+    }
+
+    function civicImageFallbacksForIssue(issue, visual) {
+      const text = `${issue.category || ''} ${issue.title || ''} ${issue.description || ''}`.toLowerCase();
+      let related;
+      if (/garbage|rubbish|waste|sanitation|bin|litter|cleaning/.test(text)) {
+        related = [CIVIC_IMAGE_ASSETS.garbage, CIVIC_IMAGE_ASSETS.infrastructure, CIVIC_IMAGE_ASSETS.flooding];
+      } else if (/street.?light|streetlight|lamp|lighting/.test(text)) {
+        related = [CIVIC_IMAGE_ASSETS.streetlight, CIVIC_IMAGE_ASSETS.traffic, CIVIC_IMAGE_ASSETS.infrastructure];
+      } else if (/drain|sewer|manhole|waterlog|flood/.test(text)) {
+        related = [CIVIC_IMAGE_ASSETS.drain, CIVIC_IMAGE_ASSETS.flooding, CIVIC_IMAGE_ASSETS.water];
+      } else if (/water supply|water pipeline|leak|burst pipe|pipe/.test(text)) {
+        related = [CIVIC_IMAGE_ASSETS.water, CIVIC_IMAGE_ASSETS.flooding, CIVIC_IMAGE_ASSETS.infrastructure];
+      } else if (/traffic signal|traffic light|signal/.test(text)) {
+        related = [CIVIC_IMAGE_ASSETS.traffic, CIVIC_IMAGE_ASSETS.streetlight, CIVIC_IMAGE_ASSETS.infrastructure];
+      } else if (/encroach|footpath|sidewalk|pavement/.test(text)) {
+        related = [CIVIC_IMAGE_ASSETS.infrastructure, CIVIC_IMAGE_ASSETS.traffic, CIVIC_IMAGE_ASSETS.pothole];
+      } else {
+        related = [CIVIC_IMAGE_ASSETS.pothole, CIVIC_IMAGE_ASSETS.potholeDilova, CIVIC_IMAGE_ASSETS.infrastructure];
+      }
+
+      return [...new Set([
+        ...related.map(asset => asset.src),
+        visual.fallback,
+        CIVIC_IMAGE_ASSETS.infrastructure.src,
+        CIVIC_IMAGE_ASSETS.pothole.src
+      ].filter(Boolean))];
     }
 
     function parseComplaintImagePath(value) {
@@ -1690,12 +1716,27 @@
     }
 
     function handleIssueImageError(image) {
-      const fallback = image.dataset.fallback;
-      if (!fallback || image.src.endsWith(fallback)) {
-        image.classList.add('image-unavailable');
+      const failedSource = image.currentSrc || image.src;
+      const failedSources = new Set((image.dataset.failedSources || '').split('|').filter(Boolean));
+      failedSources.add(failedSource);
+      image.dataset.failedSources = [...failedSources].join('|');
+
+      const candidates = [
+        ...(image.dataset.fallbacks || '').split('|'),
+        image.dataset.fallback
+      ].filter(Boolean);
+      const nextSource = candidates.find(candidate => {
+        const absoluteCandidate = new URL(candidate, document.baseURI).href;
+        return ![...failedSources].some(failed => new URL(failed, document.baseURI).href === absoluteCandidate);
+      });
+
+      if (nextSource) {
+        image.classList.remove('image-unavailable');
+        image.src = nextSource;
         return;
       }
-      image.src = fallback;
+
+      image.classList.add('image-unavailable');
     }
 
     async function ensureAnonymousStorageSession() {
@@ -2298,7 +2339,7 @@
           const visual = civicImageForIssue(issue);
           return `
             <button type="button" onclick="focusIssueOnMap('${escapeHtml(issue.id)}')" class="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2 text-left transition hover:border-lime-400/50 hover:bg-white/5">
-              <img src="${escapeHtml(visual.src)}" data-fallback="${escapeHtml(visual.fallback)}" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="handleIssueImageError(this)" class="h-10 w-10 shrink-0 rounded-lg object-cover">
+              <img src="${escapeHtml(visual.src)}" data-fallback="${escapeHtml(visual.fallback)}" data-fallbacks="${escapeHtml(civicImageFallbacksForIssue(issue, visual).join('|'))}" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="handleIssueImageError(this)" class="h-10 w-10 shrink-0 rounded-lg object-cover">
               <span class="min-w-0"><span class="block truncate text-xs font-bold">${escapeHtml(issue.title)}</span><span class="text-[10px] text-[var(--muted-foreground)]">${escapeHtml(issue.ticket_no)} · ${escapeHtml(issue.department || departmentForCategory(issue.category))}</span></span>
               <span class="priority-pill shrink-0 rounded-full px-2 py-1 text-[10px] font-extrabold">${priorityLabel(score)} · ${score}</span>
             </button>
@@ -2429,7 +2470,8 @@
         card.innerHTML = `
           <div class="issue-photo-frame">
             <img src="${escapeHtml(visual.src)}" data-fallback="${escapeHtml(visual.fallback)}"
-                 alt="${escapeHtml(visual.alt || item.title)}" loading="lazy" decoding="async"
+                 data-fallbacks="${escapeHtml(civicImageFallbacksForIssue(item, visual).join('|'))}"
+                 alt="${escapeHtml(visual.alt || item.title)}" loading="eager" decoding="async"
                  onerror="handleIssueImageError(this)"
                  class="issue-photo group-hover:scale-105 transition-transform duration-300">
             ${visual.credit ? `<a class="issue-photo-credit" href="${escapeHtml(visual.source)}" target="_blank" rel="noopener noreferrer" aria-label="Image credit: ${escapeHtml(visual.credit)}. Open source on Wikimedia Commons" title="${escapeHtml(visual.credit)}">${escapeHtml(visual.credit)}</a>` : ''}
@@ -2570,6 +2612,8 @@ function renderMapPins() {
       const visual = civicImageForIssue(item);
       popupImage.src = visual.src;
       popupImage.dataset.fallback = visual.fallback;
+      popupImage.dataset.fallbacks = civicImageFallbacksForIssue(item, visual).join('|');
+      popupImage.dataset.failedSources = '';
       popupImage.alt = visual.alt || item.title;
       popupImage.onerror = () => handleIssueImageError(popupImage);
       popupImage.classList.remove('hidden');
@@ -2600,6 +2644,8 @@ function renderMapPins() {
       const image = document.getElementById('detail-image');
       image.src = visual.src;
       image.dataset.fallback = visual.fallback;
+      image.dataset.fallbacks = civicImageFallbacksForIssue(issue, visual).join('|');
+      image.dataset.failedSources = '';
       image.alt = visual.alt || issue.title;
       image.onerror = () => handleIssueImageError(image);
       document.getElementById('detail-ticket').textContent = issue.ticket_no;
