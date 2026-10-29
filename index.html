@@ -468,10 +468,45 @@
     .live-pulse { box-shadow: 0 0 0 4px rgba(128, 201, 87, .12); }
     #duplicate-modal > div { background: #141d18; border-color: #2a3930; }
     #duplicate-match { background: #19231d; border-color: #33463a; }
+    #issues-grid > div > .issue-photo-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      background: #1b2720;
+    }
+    #issues-grid .issue-photo,
+    #photo-preview-img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .issue-photo-credit {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      max-width: calc(100% - 16px);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      background: rgba(8, 15, 11, .78);
+      padding: 4px 8px;
+      color: #f3f7f3;
+      font-size: 9px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+    }
+    .issue-photo-credit:hover { background: rgba(8, 15, 11, .94); }
     @media (max-width: 640px) {
       #admin-dashboard { padding: 18px !important; }
       #analytics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       #map-canvas-area { height: 420px !important; }
+      #issues-grid > div > .issue-photo-frame { aspect-ratio: 16 / 10; }
+      .issue-photo-credit { right: 6px; bottom: 6px; padding: 4px 7px; font-size: 9px; }
     }
   </style>
 </head>
@@ -854,6 +889,7 @@
             </div>
 
             <h4 id="popup-title" class="font-bold text-sm text-slate-900 mt-2 line-clamp-1"></h4>
+            <img id="popup-image" class="mt-2 hidden h-36 w-full rounded-xl object-cover" alt="">
             <p id="popup-location" class="text-xs text-slate-500 mt-0.5 flex items-center gap-1"></p>
 
             <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
@@ -911,7 +947,7 @@
         <!-- Photo Upload Box with Enhanced Preview -->
         <div class="bg-[var(--card)] rounded-2xl p-5 border border-[var(--border)] shadow-xs space-y-3">
           <label class="block text-xs font-bold text-[var(--foreground)] uppercase tracking-wider">
-            Issue Photo Proof <span class="text-orange-600 font-semibold">*Upload photo to see live preview</span>
+            Issue Photo Proof <span class="text-orange-600 font-semibold">(Optional · upload a real photo)</span>
           </label>
 
           <!-- Live Image Preview Card -->
@@ -941,7 +977,7 @@
               </svg>
             </div>
             <p class="mt-2 text-xs font-bold text-slate-800">Click to upload photo or take picture</p>
-            <p class="text-[12px] text-slate-400 mt-0.5">Supports JPG, PNG, WebP up to 8MB</p>
+            <p class="text-[12px] text-slate-400 mt-0.5">JPG, PNG, or WebP · up to 8 MB · stored securely with your complaint</p>
             <input type="file" id="photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden">
           </label>
         </div>
@@ -1170,6 +1206,31 @@
 
   </main>
 
+  <div id="issue-detail-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="detail-title" onclick="if(event.target===this)closeIssueDetails()">
+    <article class="mx-auto my-6 w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+      <div class="relative">
+        <img id="detail-image" class="block max-h-[55vh] w-full bg-slate-900 object-cover" alt="">
+        <button type="button" onclick="closeIssueDetails()" aria-label="Close complaint details" class="absolute right-3 top-3 rounded-full bg-slate-950/75 px-3 py-1 text-xl text-white">&times;</button>
+      </div>
+      <div class="space-y-4 p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span id="detail-ticket" class="font-mono text-xs font-bold text-orange-700"></span>
+          <span id="detail-status" class="rounded-full border px-3 py-1 text-xs font-bold"></span>
+        </div>
+        <div>
+          <p id="detail-category" class="text-xs font-bold uppercase tracking-wider text-orange-700"></p>
+          <h2 id="detail-title" class="mt-1 text-xl font-black text-[var(--foreground)]"></h2>
+        </div>
+        <p id="detail-description" class="whitespace-pre-wrap text-sm leading-relaxed text-[var(--muted-foreground)]"></p>
+        <div class="rounded-2xl border border-[var(--border)] p-4 text-sm">
+          <p id="detail-location" class="font-semibold text-[var(--foreground)]"></p>
+          <p id="detail-department" class="mt-2 text-xs text-[var(--muted-foreground)]"></p>
+          <p id="detail-reported" class="mt-1 text-xs text-[var(--muted-foreground)]"></p>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <!-- ================= SUBMIT SUCCESS MODAL ================= -->
   <div id="duplicate-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
     <div class="w-full max-w-lg space-y-4 rounded-3xl border p-6 shadow-2xl">
@@ -1217,7 +1278,16 @@
     const SUPABASE_URL = "https://ddijkjcjeznpoxzrnqok.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0FQs-lXzpXTbjpNWLb4iyg_LoEVYIPS";
     const COMPLAINTS_TABLE = 'complaints';
+    const COMPLAINT_IMAGES_BUCKET = 'complaint-images';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const complaintStorageClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storageKey: 'civicfix-private-storage-auth',
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
+    });
 </script>
   <script>
     // Initial Realistic Indian Civic Data with simulated map coordinates (x, y % on map canvas)
@@ -1244,7 +1314,7 @@
         map_y: 35,
         latitude: 12.9716,
         longitude: 77.6412,
-        photo_url: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=600&q=80',
+        photo_url: 'assets/civic-issues/pothole-road.jpg',
         upvotes: 46,
         created_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString()
       },
@@ -1270,7 +1340,7 @@
         map_y: 22,
         latitude: 28.4595,
         longitude: 77.0266,
-        photo_url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80',
+        photo_url: 'assets/civic-issues/broken-streetlight.jpg',
         upvotes: 63,
         created_at: new Date(Date.now() - 18 * 3600 * 1000).toISOString()
       },
@@ -1296,7 +1366,7 @@
         map_y: 58,
         latitude: 19.1197,
         longitude: 72.8464,
-        photo_url: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=600&q=80',
+        photo_url: 'assets/civic-issues/overflowing-bin.jpg',
         upvotes: 31,
         created_at: new Date(Date.now() - 8 * 3600 * 1000).toISOString()
       },
@@ -1322,7 +1392,7 @@
         map_y: 70,
         latitude: 28.7383,
         longitude: 77.1128,
-        photo_url: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
+        photo_url: 'assets/civic-issues/blocked-drain.jpg',
         upvotes: 94,
         created_at: new Date(Date.now() - 72 * 3600 * 1000).toISOString()
       },
@@ -1348,7 +1418,7 @@
         map_y: 62,
         latitude: 26.8851,
         longitude: 75.7820,
-        photo_url: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
+        photo_url: 'assets/civic-issues/leaking-pipe.jpg',
         upvotes: 57,
         created_at: new Date(Date.now() - 26 * 3600 * 1000).toISOString()
       }
@@ -1386,6 +1456,234 @@
       'Encroachment & Road Hazards': 'Traffic & Municipal Enforcement'
     };
 
+    const CIVIC_IMAGE_ASSETS = {
+      pothole: {
+        src: 'assets/civic-issues/pothole-road.jpg',
+        alt: 'Close view of a pothole in a damaged paved road',
+        credit: 'Miguel Tremblay · Public domain',
+        source: 'https://commons.wikimedia.org/wiki/File:Pothole_in_Villeray,_Montr%C3%A9al.jpg'
+      },
+      garbage: {
+        src: 'assets/civic-issues/overflowing-bin.jpg',
+        alt: 'Public street bin overflowing with uncollected rubbish',
+        credit: 'Wikimedia Commons · Public domain',
+        source: 'https://commons.wikimedia.org/wiki/File:Overflowing_Hamburg_street_garbage_bin.jpg'
+      },
+      streetlight: {
+        src: 'assets/civic-issues/broken-streetlight.jpg',
+        alt: 'Broken streetlight pole beside a road',
+        credit: 'Simon Johnston · CC BY-SA 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Broken_lamppost_-_streetlight_collision_on_A899_Livingston_Road_-_geograph.org.uk_-_990599.jpg'
+      },
+      drain: {
+        src: 'assets/civic-issues/blocked-drain.jpg',
+        alt: 'Blocked roadside drain filled with standing water',
+        credit: 'Evelyn Simak · CC BY-SA 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:A_blocked_drain_-_geograph.org.uk_-_768217.jpg'
+      },
+      flooding: {
+        src: 'assets/civic-issues/flooded-street.jpg',
+        alt: 'Street flooded with standing rainwater',
+        credit: 'Kskhh · CC BY-SA 4.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Watery_Road_of_Karachi.jpg'
+      },
+      water: {
+        src: 'assets/civic-issues/leaking-pipe.jpg',
+        alt: 'Water from a burst pipe pooling across a residential street',
+        credit: 'DS Pugh · CC BY-SA 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Burst_water_pipe_-_geograph.org.uk_-_6866868.jpg'
+      },
+      infrastructure: {
+        src: 'assets/civic-issues/damaged-sidewalk.jpg',
+        alt: 'Collapsed sidewalk and damaged public pavement',
+        credit: 'Jim.henderson · CC0',
+        source: 'https://commons.wikimedia.org/wiki/File:Collapsed_sidewalk_Crispo_Way_Sandy_jeh.jpg'
+      },
+      traffic: {
+        src: 'assets/civic-issues/damaged-traffic-signal.jpg',
+        alt: 'Damaged traffic signal at an urban intersection',
+        credit: 'Lorie Shaull · CC BY 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Damaged_traffic_light_signals,_Carolina.jpg'
+      },
+      potholeBengaluru: {
+        src: 'assets/civic-issues/pothole-bengaluru.jpg',
+        alt: 'Several potholes damaging a Bengaluru road',
+        credit: 'Mallikarjunasj · CC0',
+        source: 'https://commons.wikimedia.org/wiki/File:Potholes_in_Bengaluru_road.jpg'
+      },
+      potholeDilova: {
+        src: 'assets/civic-issues/pothole-dilova.jpg',
+        alt: 'Large pothole in an urban road',
+        credit: 'Роман Рябенко · CC0',
+        source: 'https://commons.wikimedia.org/wiki/File:A_pothole_in_Dilova_Street_in_Kyiv.jpg'
+      }
+    };
+
+    const CURRENT_COMPLAINT_IMAGES = {
+      'CIV-IN-2026-81078157': CIVIC_IMAGE_ASSETS.potholeBengaluru,
+      'CF-DEMO-1001': { ...CIVIC_IMAGE_ASSETS.pothole, alt: 'Roadside pothole beside a bus stop' },
+      'CF-DEMO-1002': CIVIC_IMAGE_ASSETS.streetlight,
+      'CF-DEMO-1003': CIVIC_IMAGE_ASSETS.garbage,
+      'CF-DEMO-1004': CIVIC_IMAGE_ASSETS.drain,
+      'CF-DEMO-1005': CIVIC_IMAGE_ASSETS.potholeDilova,
+      'CF-DEMO-1006': {
+        src: 'assets/civic-issues/garbage-overflowing-bin.svg',
+        alt: 'Illustration of an overflowing municipal bin',
+        credit: '',
+        source: ''
+      },
+      'CF-DEMO-1007': {
+        src: 'assets/civic-issues/streetlight-dark-stretch.svg',
+        alt: 'Illustration of a dark street with non-working streetlights',
+        credit: '',
+        source: ''
+      },
+      'CF-DEMO-1008': {
+        src: 'assets/civic-issues/pothole-service-road.svg',
+        alt: 'Illustration of a pothole on a local service road',
+        credit: '',
+        source: ''
+      },
+      'CF-DEMO-1009': {
+        src: 'assets/civic-issues/sanitation-cleanup.svg',
+        alt: 'Illustration of a public area needing sanitation cleanup',
+        credit: '',
+        source: ''
+      },
+      'CF-DEMO-1010': CIVIC_IMAGE_ASSETS.water,
+      'CF-DEMO-1011': CIVIC_IMAGE_ASSETS.infrastructure,
+      'CF-DEMO-1012': CIVIC_IMAGE_ASSETS.flooding,
+      'CF-DEMO-1013': CIVIC_IMAGE_ASSETS.traffic,
+      'CF-DEMO-1014': {
+        src: 'assets/civic-issues/garbage-street-litter.svg',
+        alt: 'Illustration of scattered rubbish along a curb',
+        credit: '',
+        source: ''
+      },
+      'CF-DEMO-1015': {
+        src: 'assets/civic-issues/uneven-road-surface.svg',
+        alt: 'Illustration of an uneven and cracked road surface',
+        credit: '',
+        source: ''
+      }
+    };
+
+    function civicImageForCategory(category, issueText = '') {
+      const text = `${category || ''} ${issueText || ''}`.toLowerCase();
+      if (/pothole|road damage|uneven road|broken road/.test(text)) return CIVIC_IMAGE_ASSETS.pothole;
+      if (/garbage|rubbish|waste|sanitation|bin/.test(text)) return CIVIC_IMAGE_ASSETS.garbage;
+      if (/street ?light|streetlight|lamp|lighting/.test(text)) return CIVIC_IMAGE_ASSETS.streetlight;
+      if (/flood|waterlog|waterlogging|standing water|waterlogged/.test(text)) return CIVIC_IMAGE_ASSETS.flooding;
+      if (/drain|sewer|manhole/.test(text)) return CIVIC_IMAGE_ASSETS.drain;
+      if (/water supply|water pipeline|leak|burst pipe|pipe/.test(text)) return CIVIC_IMAGE_ASSETS.water;
+      if (/traffic signal|traffic light|signal/.test(text)) return CIVIC_IMAGE_ASSETS.traffic;
+      return CIVIC_IMAGE_ASSETS.infrastructure;
+    }
+
+    function civicImageForIssue(issue) {
+      const fallback = civicImageForCategory(issue.category, `${issue.title || ''} ${issue.description || ''}`);
+      const photo = String(issue.photo_url || '').trim();
+      const storagePath = parseComplaintImagePath(photo);
+      if (storagePath) {
+        const signed = signedImageUrls.get(photo);
+        if (signed && signed.expiresAt > Date.now() + 30000) {
+          return { ...fallback, src: signed.url, fallback: fallback.src, credit: '', source: '' };
+        }
+        requestSignedComplaintImage(photo, storagePath);
+        return { ...fallback, fallback: fallback.src, loading: !signedImageFailures.has(photo), credit: '', source: '' };
+      }
+      const curatedImage = CURRENT_COMPLAINT_IMAGES[issue.ticket_no];
+      const isExistingPlaceholder = !photo ||
+        /^https:\/\/images\.unsplash\.com\//i.test(photo) ||
+        /^assets\/civic-issues\/[a-z0-9-]+\.(?:jpg|svg)$/i.test(photo);
+      if (curatedImage && isExistingPlaceholder) {
+        return { ...curatedImage, fallback: fallback.src, isReference: true };
+      }
+      const isLegacyStockPhoto = /^https:\/\/images\.unsplash\.com\//i.test(photo);
+      if (!photo || isLegacyStockPhoto || photo === fallback.src) return { ...fallback, fallback: fallback.src };
+      const isSupportedPhoto = /^https?:\/\//i.test(photo) ||
+        /^data:image\/(?:jpeg|png|webp);base64,/i.test(photo) ||
+        /^assets\/civic-issues\/[a-z0-9-]+\.jpg$/i.test(photo);
+      if (!isSupportedPhoto) return { ...fallback, fallback: fallback.src };
+      return { ...fallback, src: photo, fallback: fallback.src, credit: '', source: '' };
+    }
+
+    function parseComplaintImagePath(value) {
+      const prefix = `${COMPLAINT_IMAGES_BUCKET}/`;
+      if (!value.startsWith(prefix)) return null;
+      const path = value.slice(prefix.length);
+      return /^[0-9a-f-]{36}\/[A-Za-z0-9-]+\.jpg$/i.test(path) ? path : null;
+    }
+
+    function requestSignedComplaintImage(imageKey, storagePath) {
+      if (!storageAuthReady || signedImageRequests.has(imageKey) || signedImageFailures.has(imageKey)) return;
+      const request = complaintStorageClient.storage.from(COMPLAINT_IMAGES_BUCKET)
+        .createSignedUrl(storagePath, 3600)
+        .then(({ data, error }) => {
+          if (error) throw error;
+          if (!data?.signedUrl) throw new Error('Supabase did not return a signed complaint photo URL.');
+          signedImageUrls.set(imageKey, { url: data.signedUrl, expiresAt: Date.now() + 3600000 });
+          const issue = issues.find(item => item.photo_url === imageKey);
+          if (issue) {
+            render();
+            if (activeMapPopupIssueId === issue.id) openMapPopup(issue);
+            if (activeDetailIssueId === issue.id) openIssueDetails(issue.id);
+          }
+        })
+        .catch(error => {
+          signedImageFailures.add(imageKey);
+          console.error(`Unable to retrieve stored complaint photo ${imageKey}:`, error);
+          if (issues.some(issue => issue.photo_url === imageKey)) render();
+        })
+        .finally(() => signedImageRequests.delete(imageKey));
+      signedImageRequests.set(imageKey, request);
+    }
+
+    function handleIssueImageError(image) {
+      const fallback = image.dataset.fallback;
+      if (!fallback || image.src.endsWith(fallback)) {
+        image.classList.add('image-unavailable');
+        return;
+      }
+      image.src = fallback;
+    }
+
+    async function ensureAnonymousStorageSession() {
+      if (storageUserId && storageAuthReady) return storageUserId;
+      if (!storageAuthRequest) {
+        storageAuthRequest = (async () => {
+          const { data: sessionData, error: sessionError } = await complaintStorageClient.auth.getSession();
+          if (sessionError) throw sessionError;
+          let user = sessionData.session?.user;
+          if (!user) {
+            const { data, error } = await complaintStorageClient.auth.signInAnonymously();
+            if (error) throw error;
+            user = data.user;
+          }
+          if (!user?.id) throw new Error('Supabase did not provide an authenticated upload session.');
+          storageUserId = user.id;
+          storageAuthReady = true;
+          return user.id;
+        })();
+      }
+      try {
+        return await storageAuthRequest;
+      } finally {
+        storageAuthRequest = null;
+      }
+    }
+
+    async function initializeStorageAuth() {
+      try {
+        await ensureAnonymousStorageSession();
+        render();
+      } catch (error) {
+        storageAuthReady = false;
+        console.error('Unable to initialize secure complaint photo access:', error);
+        showToast('Secure photo storage unavailable', 'Enable Supabase anonymous sign-in and configure the private complaint-images bucket to upload or view complaint photos.', 'error');
+      }
+    }
+
     // State Variables
     let issues = [];
     let selectedArea = 'All Areas';
@@ -1397,6 +1695,12 @@
     let displayMode = 'grid'; // 'grid' or 'map'
     let userUpvotes = new Set();
     let currentPhotoBase64 = null;
+    let storageUserId = null;
+    let storageAuthReady = false;
+    let storageAuthRequest = null;
+    const signedImageUrls = new Map();
+    const signedImageRequests = new Map();
+    const signedImageFailures = new Set();
     let selectedLat = 28.6139;
     let selectedLng = 77.2090;
     let supabaseReady = false;
@@ -1809,7 +2113,8 @@
         }`;
 
         btn.innerHTML = `
-          <span>${cat}</span>
+          ${cat === 'All Categories' ? '' : `<img src="${escapeHtml(civicImageForCategory(cat).src)}" data-fallback="${escapeHtml(civicImageForCategory(cat).fallback || civicImageForCategory(cat).src)}" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="handleIssueImageError(this)" class="h-6 w-6 shrink-0 rounded-full object-cover">`}
+          <span>${escapeHtml(cat)}</span>
           <span class="px-1.5 py-0.2 rounded-full text-[12px] ${isSelected ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-600'}">
             ${count}
           </span>
@@ -1940,8 +2245,10 @@
       document.getElementById('priority-queue').innerHTML = priorityItems.length
         ? priorityItems.map(issue => {
           const score = getPriorityScore(issue);
+          const visual = civicImageForIssue(issue);
           return `
             <button type="button" onclick="focusIssueOnMap('${escapeHtml(issue.id)}')" class="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2 text-left transition hover:border-lime-400/50 hover:bg-white/5">
+              <img src="${escapeHtml(visual.src)}" data-fallback="${escapeHtml(visual.fallback)}" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="handleIssueImageError(this)" class="h-10 w-10 shrink-0 rounded-lg object-cover">
               <span class="min-w-0"><span class="block truncate text-xs font-bold">${escapeHtml(issue.title)}</span><span class="text-[10px] text-[var(--muted-foreground)]">${escapeHtml(issue.ticket_no)} · ${escapeHtml(issue.department || departmentForCategory(issue.category))}</span></span>
               <span class="priority-pill shrink-0 rounded-full px-2 py-1 text-[10px] font-extrabold">${priorityLabel(score)} · ${score}</span>
             </button>
@@ -2038,9 +2345,7 @@
         const hasCoordinates = Number.isFinite(item.latitude) && Number.isFinite(item.longitude);
         const mapUrl = hasCoordinates ? `https://www.google.com/maps?q=${item.latitude},${item.longitude}` : '';
         const priority = getPriorityScore(item);
-        const safePhoto = /^https:\/\/|^data:image\/(?:jpeg|png|webp);base64,/i.test(item.photo_url || '')
-          ? item.photo_url
-          : 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80';
+        const visual = civicImageForIssue(item);
         const reportedAt = new Date(item.created_at);
         const timelineHtml = `
           <details class="rounded-xl border border-[var(--border)] px-3 py-2 text-xs">
@@ -2072,9 +2377,13 @@
         }
 
         card.innerHTML = `
-          <div class="relative aspect-[16/10] bg-slate-100 overflow-hidden">
-            <img src="${escapeHtml(safePhoto)}" 
-                 alt="${escapeHtml(item.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+          <div class="issue-photo-frame">
+            <img src="${escapeHtml(visual.src)}" data-fallback="${escapeHtml(visual.fallback)}"
+                 alt="${escapeHtml(visual.alt || item.title)}" loading="lazy" decoding="async"
+                 onerror="handleIssueImageError(this)"
+                 class="issue-photo group-hover:scale-105 transition-transform duration-300">
+            ${visual.credit ? `<a class="issue-photo-credit" href="${escapeHtml(visual.source)}" target="_blank" rel="noopener noreferrer" aria-label="Image credit: ${escapeHtml(visual.credit)}. Open source on Wikimedia Commons" title="${escapeHtml(visual.credit)}">${escapeHtml(visual.credit)}</a>` : ''}
+            ${visual.isReference ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Reference image · not resident photo</span>' : !item.photo_url ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Category placeholder</span>' : visual.loading ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Loading uploaded photo…</span>' : signedImageFailures.has(item.photo_url) ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Photo unavailable · placeholder shown</span>' : ''}
             <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[12px] font-bold tracking-wider uppercase bg-slate-900/85 text-white backdrop-blur-xs">
               ${escapeHtml(item.category)}
             </span>
@@ -2097,6 +2406,7 @@
               <p class="text-xs text-[var(--muted-foreground)] line-clamp-2 leading-relaxed">
                 ${escapeHtml(item.description || 'No detailed remarks added.')}
               </p>
+              <button type="button" onclick="openIssueDetails('${escapeHtml(item.id)}')" class="pt-1 text-xs font-bold text-orange-700 hover:text-orange-900 hover:underline">View full complaint details</button>
             </div>
 
             <!-- Granular Address Box -->
@@ -2186,6 +2496,7 @@ function renderMapPins() {
 }
     // Map Pin Popup Modal
     function openMapPopup(item) {
+      activeMapPopupIssueId = item.id;
       const popup = document.getElementById('map-popup-card');
       document.getElementById('popup-cat-badge').textContent = item.category;
       
@@ -2205,6 +2516,13 @@ function renderMapPins() {
       const addr = item.address_details || {};
       document.getElementById('popup-location').textContent = `${addr.landmark || ''}, ${addr.locality || ''}, ${addr.city || ''}`;
       document.getElementById('popup-ticket').textContent = item.ticket_no;
+      const popupImage = document.getElementById('popup-image');
+      const visual = civicImageForIssue(item);
+      popupImage.src = visual.src;
+      popupImage.dataset.fallback = visual.fallback;
+      popupImage.alt = visual.alt || item.title;
+      popupImage.onerror = () => handleIssueImageError(popupImage);
+      popupImage.classList.remove('hidden');
 
       const upBtn = document.getElementById('popup-upvote-btn');
       upBtn.onclick = () => {
@@ -2218,6 +2536,39 @@ function renderMapPins() {
 
     function closeMapPopup() {
       document.getElementById('map-popup-card').classList.add('hidden');
+      activeMapPopupIssueId = null;
+    }
+
+    let activeMapPopupIssueId = null;
+    let activeDetailIssueId = null;
+
+    function openIssueDetails(id) {
+      const issue = issues.find(item => item.id === id);
+      if (!issue) return;
+      activeDetailIssueId = issue.id;
+      const visual = civicImageForIssue(issue);
+      const image = document.getElementById('detail-image');
+      image.src = visual.src;
+      image.dataset.fallback = visual.fallback;
+      image.alt = visual.alt || issue.title;
+      image.onerror = () => handleIssueImageError(image);
+      document.getElementById('detail-ticket').textContent = issue.ticket_no;
+      document.getElementById('detail-category').textContent = issue.category;
+      document.getElementById('detail-title').textContent = issue.title;
+      document.getElementById('detail-description').textContent = issue.description || 'No detailed remarks added.';
+      const address = issue.address_details || {};
+      document.getElementById('detail-location').textContent = [address.landmark, address.street, address.locality, address.ward, address.city, address.pincode].filter(Boolean).join(', ');
+      document.getElementById('detail-department').textContent = `Assigned department: ${issue.department || departmentForCategory(issue.category)}`;
+      document.getElementById('detail-reported').textContent = `Reported ${new Date(issue.created_at).toLocaleString('en-IN')}`;
+      const status = document.getElementById('detail-status');
+      status.textContent = issue.status.replace('_', ' ');
+      status.className = `rounded-full border px-3 py-1 text-xs font-bold ${issue.status === 'resolved' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : issue.status === 'in_progress' ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-rose-300 bg-rose-50 text-rose-700'}`;
+      document.getElementById('issue-detail-modal').classList.remove('hidden');
+    }
+
+    function closeIssueDetails() {
+      document.getElementById('issue-detail-modal').classList.add('hidden');
+      activeDetailIssueId = null;
     }
 
     // Direct Status Update for Authority Role
@@ -2475,7 +2826,7 @@ function autoDetectLocation() {
     async function handlePhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         e.target.value = '';
         showToast('Unsupported file', 'Choose a JPG, PNG, or WebP image.', 'error');
         return;
@@ -2495,6 +2846,7 @@ function autoDetectLocation() {
         showToast("Image Preview Ready", `${file.name} loaded successfully.`, "info");
       } catch (error) {
         console.error('Unable to process uploaded photo:', error);
+        e.target.value = '';
         showToast('Photo could not be processed', error.message, 'error');
       }
     }
@@ -2614,17 +2966,6 @@ function autoDetectLocation() {
         return;
       }
 
-      const fallbackPhotos = {
-        'Potholes & Road Damage': 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=600&q=80',
-        'Streetlights & High-Mast Lamps': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80',
-        'Overflowing Garbage & Dump Yards': 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=600&q=80',
-        'Open Manholes & Drain Slabs': 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
-        'Water Pipeline Burst & Leakage': 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
-        'Waterlogging & Blocked Drains': 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=600&q=80',
-        'Stray Animal Hazards': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80',
-        'Encroachment & Road Hazards': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80'
-      };
-
       const newIssue = {
         title,
         category,
@@ -2642,7 +2983,8 @@ function autoDetectLocation() {
         },
         latitude: selectedLat,
         longitude: selectedLng,
-        photo_url: currentPhotoBase64 || fallbackPhotos[category] || fallbackPhotos['Encroachment & Road Hazards'],
+        photo_url: '',
+        photo_data: currentPhotoBase64,
         status: 'open',
         upvotes: 0,
         created_at: new Date().toISOString()
@@ -2665,9 +3007,10 @@ function autoDetectLocation() {
       isSubmitting = true;
       const submitButton = document.querySelector('#report-form button[type="submit"]');
       submitButton.disabled = true;
-      submitButton.querySelector('span').textContent = 'Submitting securely...';
+      submitButton.querySelector('span').textContent = issue.photo_data ? 'Uploading photo securely…' : 'Submitting securely...';
       const now = new Date().toISOString();
       const ticketNo = `CIV-IN-${new Date().getFullYear()}-${String(Date.now()).slice(-8)}`;
+      let uploadedStoragePath = null;
       const row = {
         ticket_id: ticketNo,
         city: issue.address_details.city,
@@ -2681,14 +3024,34 @@ function autoDetectLocation() {
         longitude: issue.longitude,
         status: 'open',
         upvotes: 0,
-        image_url: issue.photo_url,
+        image_url: null,
         reported_at: now,
         updated_at: now
       };
 
       try {
+        if (issue.photo_data) {
+          const userId = await ensureAnonymousStorageSession();
+          const photoBlob = await (await fetch(issue.photo_data)).blob();
+          if (photoBlob.type !== 'image/jpeg' || !photoBlob.size || photoBlob.size > 8 * 1024 * 1024) {
+            throw new Error('The optimized photo is invalid or exceeds the 8 MB storage limit.');
+          }
+          const photoId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const storageObjectPath = `${userId}/${ticketNo}-${photoId}.jpg`;
+          const { error: uploadError } = await complaintStorageClient.storage
+            .from(COMPLAINT_IMAGES_BUCKET)
+            .upload(storageObjectPath, photoBlob, {
+              cacheControl: '3600',
+              contentType: 'image/jpeg',
+              upsert: false
+            });
+          if (uploadError) throw uploadError;
+          uploadedStoragePath = storageObjectPath;
+          row.image_url = `${COMPLAINT_IMAGES_BUCKET}/${storageObjectPath}`;
+        }
         const { data, error } = await supabaseClient.from(COMPLAINTS_TABLE).insert(row).select('*').single();
         if (error) throw error;
+        uploadedStoragePath = null;
         const savedIssue = normalizeComplaint(data);
         issues.unshift(savedIssue);
         saveState();
@@ -2710,7 +3073,15 @@ function autoDetectLocation() {
         render();
       } catch (error) {
         console.error('Unable to submit complaint to Supabase:', error);
-        showToast('Report submission failed', 'Supabase did not accept the report. Your form is unchanged; please retry.', 'error');
+        if (uploadedStoragePath) {
+          try {
+            const { error: cleanupError } = await complaintStorageClient.storage.from(COMPLAINT_IMAGES_BUCKET).remove([uploadedStoragePath]);
+            if (cleanupError) console.error('Unable to remove the unassociated complaint photo after submission failed:', cleanupError);
+          } catch (cleanupError) {
+            console.error('Unable to remove the unassociated complaint photo after submission failed:', cleanupError);
+          }
+        }
+        showToast('Report submission failed', `No complaint was saved. ${escapeHtml(error.message || 'Check the Supabase connection and try again.')}`, 'error');
       } finally {
         isSubmitting = false;
         submitButton.disabled = false;
@@ -2736,6 +3107,7 @@ function autoDetectLocation() {
     setBackendStatus('Connecting to Supabase...', false);
     updateDepartmentPreview();
     render();
+    initializeStorageAuth();
     refreshComplaints(true).then(connected => {
       if (connected) startRealtimeUpdates();
     });
