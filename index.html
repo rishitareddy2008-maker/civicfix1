@@ -1516,55 +1516,54 @@
         alt: 'Large pothole in an urban road',
         credit: 'Роман Рябенко · CC0',
         source: 'https://commons.wikimedia.org/wiki/File:A_pothole_in_Dilova_Street_in_Kyiv.jpg'
-      }
-    };
-
-    const CURRENT_COMPLAINT_IMAGES = {
-      'CIV-IN-2026-81078157': CIVIC_IMAGE_ASSETS.potholeBengaluru,
-      'CF-DEMO-1001': { ...CIVIC_IMAGE_ASSETS.pothole, alt: 'Roadside pothole beside a bus stop' },
-      'CF-DEMO-1002': CIVIC_IMAGE_ASSETS.streetlight,
-      'CF-DEMO-1003': CIVIC_IMAGE_ASSETS.garbage,
-      'CF-DEMO-1004': CIVIC_IMAGE_ASSETS.drain,
-      'CF-DEMO-1005': CIVIC_IMAGE_ASSETS.potholeDilova,
-      'CF-DEMO-1006': {
-        src: 'assets/civic-issues/garbage-overflowing-bin.svg',
-        alt: 'Illustration of an overflowing municipal bin',
-        credit: '',
-        source: ''
       },
-      'CF-DEMO-1007': {
-        src: 'assets/civic-issues/streetlight-dark-stretch.svg',
-        alt: 'Illustration of a dark street with non-working streetlights',
-        credit: '',
-        source: ''
+      potholeServiceRoad: {
+        src: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Pothole_Big.jpg',
+        alt: 'Large pothole in a damaged road surface',
+        credit: 'Uncl3dad · Public domain',
+        source: 'https://commons.wikimedia.org/wiki/File:Pothole_Big.jpg'
       },
-      'CF-DEMO-1008': {
-        src: 'assets/civic-issues/pothole-service-road.svg',
-        alt: 'Illustration of a pothole on a local service road',
-        credit: '',
-        source: ''
+      potholeUnevenRoad: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Pothole_in_limerock_road_gilchrist_county_florida.jpg/960px-Pothole_in_limerock_road_gilchrist_county_florida.jpg',
+        alt: 'Potholes and uneven surface on a local road',
+        credit: 'Cosmicray · CC BY-SA 4.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Pothole_in_limerock_road_gilchrist_county_florida.jpg'
       },
-      'CF-DEMO-1009': {
-        src: 'assets/civic-issues/sanitation-cleanup.svg',
-        alt: 'Illustration of a public area needing sanitation cleanup',
-        credit: '',
-        source: ''
+      streetlightStretch: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/M40_%286483667227%29.jpg/960px-M40_%286483667227%29.jpg',
+        alt: 'Roadside streetlights out along a highway at night',
+        credit: 'Timo Newton-Syms · CC BY-SA 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:M40_(6483667227).jpg'
       },
-      'CF-DEMO-1010': CIVIC_IMAGE_ASSETS.water,
-      'CF-DEMO-1011': CIVIC_IMAGE_ASSETS.infrastructure,
-      'CF-DEMO-1012': CIVIC_IMAGE_ASSETS.flooding,
-      'CF-DEMO-1013': CIVIC_IMAGE_ASSETS.traffic,
-      'CF-DEMO-1014': {
-        src: 'assets/civic-issues/garbage-street-litter.svg',
-        alt: 'Illustration of scattered rubbish along a curb',
-        credit: '',
-        source: ''
+      garbageOverflowing: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Overflowing_garbage_bin_in_Helsinki%2C_Finland%2C_2019.jpg/960px-Overflowing_garbage_bin_in_Helsinki%2C_Finland%2C_2019.jpg',
+        alt: 'Garbage overflowing from a public waste bin',
+        credit: 'Ilkka Jukarainen · CC BY-SA 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Overflowing_garbage_bin_in_Helsinki,_Finland,_2019.jpg'
       },
-      'CF-DEMO-1015': {
-        src: 'assets/civic-issues/uneven-road-surface.svg',
-        alt: 'Illustration of an uneven and cracked road surface',
-        credit: '',
-        source: ''
+      garbageCleanup: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/Street_art_and_waste_on_Coronel_Talbot_and_Gran_Colombia%2C_Cuenca.jpg/960px-Street_art_and_waste_on_Coronel_Talbot_and_Gran_Colombia%2C_Cuenca.jpg',
+        alt: 'Accumulated waste along a public street',
+        credit: 'Martín Vasco · CC BY-SA 4.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Street_art_and_waste_on_Coronel_Talbot_and_Gran_Colombia,_Cuenca.jpg'
+      },
+      garbageScattered: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/Pile_That_Garbage_-_New_Orleans_after_Hurricane_Ida.jpg/960px-Pile_That_Garbage_-_New_Orleans_after_Hurricane_Ida.jpg',
+        alt: 'Pile of accumulated rubbish awaiting collection',
+        credit: 'Bart Everson · CC BY 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Pile_That_Garbage_-_New_Orleans_after_Hurricane_Ida.jpg'
+      },
+      uncoveredDrain: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/Exposed_drainage_-_8_December_2025.jpg/960px-Exposed_drainage_-_8_December_2025.jpg',
+        alt: 'Uncovered drainage opening in a public area',
+        credit: 'Aethonatic · CC0',
+        source: 'https://commons.wikimedia.org/wiki/File:Exposed_drainage_-_8_December_2025.jpg'
+      },
+      encroachment: {
+        src: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Sidewalk_Seller.jpg',
+        alt: 'Street vendor occupying part of a public sidewalk',
+        credit: 'Meena Kadri · CC BY 2.0',
+        source: 'https://commons.wikimedia.org/wiki/File:Sidewalk_Seller.jpg'
       }
     };
 
@@ -1580,6 +1579,57 @@
       return CIVIC_IMAGE_ASSETS.infrastructure;
     }
 
+    function civicImageForDemoIssue(issue, fallback) {
+      const title = String(issue.title || '').toLowerCase();
+      const description = String(issue.description || '').toLowerCase();
+      const category = String(issue.category || '').toLowerCase();
+      const text = `${title} ${description} ${category}`;
+
+      if (/street.?light|streetlight|lighting/.test(text)) {
+        if (/dark stretch|multiple lights|short stretch|several lights/.test(text)) {
+          return CIVIC_IMAGE_ASSETS.streetlightStretch;
+        }
+        return CIVIC_IMAGE_ASSETS.streetlight;
+      }
+      if (/garbage|rubbish|waste|sanitation|bin|litter|cleaning/.test(text)) {
+        if (/needs cleaning|busy public area/.test(text)) {
+          return CIVIC_IMAGE_ASSETS.garbageCleanup;
+        }
+        if (/scattered|litter|collection point/.test(text)) {
+          return CIVIC_IMAGE_ASSETS.garbageScattered;
+        }
+        if (/overflow|public bin/.test(text)) {
+          return CIVIC_IMAGE_ASSETS.garbageOverflowing;
+        }
+        if (/needs cleaning|busy public area|piled|accumulated/.test(text)) {
+          return /piled|accumulated/.test(text) ? CIVIC_IMAGE_ASSETS.garbage : {
+            ...CIVIC_IMAGE_ASSETS.garbageCleanup
+          };
+        }
+        return CIVIC_IMAGE_ASSETS.garbage;
+      }
+      if (/missing.*(?:drain|manhole).*cover|(?:drain|manhole).*cover.*missing|open manhole|uncovered drain/.test(text)) {
+        return CIVIC_IMAGE_ASSETS.uncoveredDrain;
+      }
+      if (/drain|sewer|waterlog/.test(text)) {
+        return /block|not draining|clog/.test(text) ? CIVIC_IMAGE_ASSETS.drain : CIVIC_IMAGE_ASSETS.flooding;
+      }
+      if (/water supply|water pipeline|leak|burst pipe|pipe/.test(text)) return CIVIC_IMAGE_ASSETS.water;
+      if (/traffic signal|traffic light|signal/.test(text)) return CIVIC_IMAGE_ASSETS.traffic;
+      if (/footpath|sidewalk|pavement/.test(text)) return CIVIC_IMAGE_ASSETS.infrastructure;
+      if (/pothole|road damage|road edge|uneven road|broken road|road surface/.test(text)) {
+        if (/service road/.test(text)) return CIVIC_IMAGE_ASSETS.potholeServiceRoad;
+        if (/uneven/.test(text)) return CIVIC_IMAGE_ASSETS.potholeUnevenRoad;
+        if (/road edge/.test(text)) return CIVIC_IMAGE_ASSETS.potholeDilova;
+        if (/bus stop/.test(text) && /encroachment/.test(category)) return CIVIC_IMAGE_ASSETS.potholeBengaluru;
+        return CIVIC_IMAGE_ASSETS.pothole;
+      }
+      if (/encroach|blocking (?:the )?footpath|stall on (?:the )?sidewalk|sidewalk obstruction/.test(text) || category.includes('encroach')) {
+        return CIVIC_IMAGE_ASSETS.encroachment;
+      }
+      return fallback;
+    }
+
     function civicImageForIssue(issue) {
       const fallback = civicImageForCategory(issue.category, `${issue.title || ''} ${issue.description || ''}`);
       const photo = String(issue.photo_url || '').trim();
@@ -1592,14 +1642,14 @@
         requestSignedComplaintImage(photo, storagePath);
         return { ...fallback, fallback: fallback.src, loading: !signedImageFailures.has(photo), credit: '', source: '' };
       }
-      const curatedImage = CURRENT_COMPLAINT_IMAGES[issue.ticket_no];
       const isExistingPlaceholder = !photo ||
         /^https:\/\/images\.unsplash\.com\//i.test(photo) ||
         /^assets\/civic-issues\/[a-z0-9-]+\.(?:jpg|svg)$/i.test(photo);
-      if (curatedImage && isExistingPlaceholder) {
-        return { ...curatedImage, fallback: fallback.src, isReference: true };
-      }
       const isLegacyStockPhoto = /^https:\/\/images\.unsplash\.com\//i.test(photo);
+      if (isExistingPlaceholder) {
+        const demoImage = civicImageForDemoIssue(issue, fallback);
+        return { ...demoImage, fallback: fallback.src };
+      }
       if (!photo || isLegacyStockPhoto || photo === fallback.src) return { ...fallback, fallback: fallback.src };
       const isSupportedPhoto = /^https?:\/\//i.test(photo) ||
         /^data:image\/(?:jpeg|png|webp);base64,/i.test(photo) ||
@@ -2383,7 +2433,7 @@
                  onerror="handleIssueImageError(this)"
                  class="issue-photo group-hover:scale-105 transition-transform duration-300">
             ${visual.credit ? `<a class="issue-photo-credit" href="${escapeHtml(visual.source)}" target="_blank" rel="noopener noreferrer" aria-label="Image credit: ${escapeHtml(visual.credit)}. Open source on Wikimedia Commons" title="${escapeHtml(visual.credit)}">${escapeHtml(visual.credit)}</a>` : ''}
-            ${visual.isReference ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Reference image · not resident photo</span>' : !item.photo_url ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Category placeholder</span>' : visual.loading ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Loading uploaded photo…</span>' : signedImageFailures.has(item.photo_url) ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Photo unavailable · placeholder shown</span>' : ''}
+            ${visual.loading ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Loading uploaded photo…</span>' : signedImageFailures.has(item.photo_url) ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Photo unavailable · placeholder shown</span>' : ''}
             <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[12px] font-bold tracking-wider uppercase bg-slate-900/85 text-white backdrop-blur-xs">
               ${escapeHtml(item.category)}
             </span>
