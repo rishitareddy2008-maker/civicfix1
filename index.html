@@ -483,30 +483,11 @@
       object-fit: cover;
       object-position: center;
     }
-    .issue-photo-credit {
-      position: absolute;
-      right: 8px;
-      bottom: 8px;
-      max-width: calc(100% - 16px);
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 999px;
-      background: rgba(8, 15, 11, .78);
-      padding: 4px 8px;
-      color: #f3f7f3;
-      font-size: 9px;
-      line-height: 1.2;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      backdrop-filter: blur(8px);
-    }
-    .issue-photo-credit:hover { background: rgba(8, 15, 11, .94); }
     @media (max-width: 640px) {
       #admin-dashboard { padding: 18px !important; }
       #analytics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       #map-canvas-area { height: 420px !important; }
       #issues-grid > div > .issue-photo-frame { aspect-ratio: 16 / 10; }
-      .issue-photo-credit { right: 6px; bottom: 6px; padding: 4px 7px; font-size: 9px; }
     }
   </style>
 </head>
@@ -953,7 +934,7 @@
           <!-- Live Image Preview Card -->
           <div id="photo-preview-container" class="hidden relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-700">
             <div class="relative aspect-[16/9] w-full">
-              <img id="photo-preview-img" src="" alt="Issue Preview" class="w-full h-full object-cover">
+              <img id="photo-preview-img" alt="Issue Preview" class="w-full h-full object-cover">
             </div>
             
             <div class="p-3 bg-slate-900/90 text-white flex items-center justify-between text-xs backdrop-blur-md">
@@ -1567,6 +1548,10 @@
       }
     };
 
+    const CIVIC_IMAGE_FAILURE_FALLBACK = `data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400"><rect width="640" height="400" fill="#26332c"/><path d="M190 270l75-82 57 59 42-43 86 66H190z" fill="#718078"/><circle cx="405" cy="135" r="28" fill="#b8ed66"/><rect x="145" y="95" width="350" height="220" rx="18" fill="none" stroke="#94a49a" stroke-width="14"/></svg>'
+    )}`;
+
     function civicImageForCategory(category, issueText = '') {
       const text = `${category || ''} ${issueText || ''}`.toLowerCase();
       if (/pothole|road damage|uneven road|broken road/.test(text)) return CIVIC_IMAGE_ASSETS.pothole;
@@ -1723,7 +1708,8 @@
 
       const candidates = [
         ...(image.dataset.fallbacks || '').split('|'),
-        image.dataset.fallback
+        image.dataset.fallback,
+        CIVIC_IMAGE_FAILURE_FALLBACK
       ].filter(Boolean);
       const nextSource = candidates.find(candidate => {
         const absoluteCandidate = new URL(candidate, document.baseURI).href;
@@ -2204,7 +2190,7 @@
         }`;
 
         btn.innerHTML = `
-          ${cat === 'All Categories' ? '' : `<img src="${escapeHtml(civicImageForCategory(cat).src)}" data-fallback="${escapeHtml(civicImageForCategory(cat).fallback || civicImageForCategory(cat).src)}" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="handleIssueImageError(this)" class="h-6 w-6 shrink-0 rounded-full object-cover">`}
+          ${cat === 'All Categories' ? '' : `<img src="${escapeHtml(civicImageForCategory(cat).src)}" data-fallback="${escapeHtml(CIVIC_IMAGE_ASSETS.infrastructure.src)}" data-fallbacks="${escapeHtml(`${CIVIC_IMAGE_ASSETS.infrastructure.src}|${CIVIC_IMAGE_ASSETS.pothole.src}`)}" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="handleIssueImageError(this)" class="h-6 w-6 shrink-0 rounded-full object-cover">`}
           <span>${escapeHtml(cat)}</span>
           <span class="px-1.5 py-0.2 rounded-full text-[12px] ${isSelected ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-600'}">
             ${count}
@@ -2474,7 +2460,6 @@
                  alt="${escapeHtml(visual.alt || item.title)}" loading="eager" decoding="async"
                  onerror="handleIssueImageError(this)"
                  class="issue-photo group-hover:scale-105 transition-transform duration-300">
-            ${visual.credit ? `<a class="issue-photo-credit" href="${escapeHtml(visual.source)}" target="_blank" rel="noopener noreferrer" aria-label="Image credit: ${escapeHtml(visual.credit)}. Open source on Wikimedia Commons" title="${escapeHtml(visual.credit)}">${escapeHtml(visual.credit)}</a>` : ''}
             ${visual.loading ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Loading uploaded photo…</span>' : signedImageFailures.has(item.photo_url) ? '<span class="absolute bottom-2.5 right-2.5 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-semibold text-white">Photo unavailable · placeholder shown</span>' : ''}
             <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[12px] font-bold tracking-wider uppercase bg-slate-900/85 text-white backdrop-blur-xs">
               ${escapeHtml(item.category)}
@@ -2950,7 +2935,7 @@ function autoDetectLocation() {
     function removePhoto() {
       currentPhotoBase64 = null;
       document.getElementById('photo-input').value = '';
-      document.getElementById('photo-preview-img').src = '';
+      document.getElementById('photo-preview-img').removeAttribute('src');
       document.getElementById('photo-preview-container').classList.add('hidden');
       document.getElementById('photo-dropzone').classList.remove('hidden');
     }
